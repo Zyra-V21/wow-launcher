@@ -13,6 +13,7 @@ Built because Lutris, Bottles, and other existing solutions kept failing to laun
 - Applies Battle.net-specific fixes (CEF rendering, digital signature bypass, IPv6 disable)
 - Forces **NVIDIA discrete GPU** via PRIME render offload on hybrid laptops
 - Enables **esync + fsync** for better performance
+- Installs desktop entries so you can launch from your app menu
 
 ## Requirements
 
@@ -39,6 +40,16 @@ After that, always launch with:
 ```bash
 ./launch.sh
 ```
+
+## Desktop integration
+
+To add Battle.net, WoW Classic, and WoW Retail to your Linux app menu:
+
+```bash
+./install-desktop.sh
+```
+
+This creates `.desktop` entries with icons so you can search and launch them like any other app.
 
 ## Usage
 
@@ -67,7 +78,7 @@ It checks GPU drivers, Vulkan, Wine, DXVK, Battle.net installation, esync limits
 
 **Battle.net installer hangs at "Updating Battle.net Update Agent"**
 
-This happens with old Wine versions. The setup script uses Wine 11.4 Staging which fixes this. If it still hangs, kill and retry — the Agent sometimes needs a second attempt.
+This happens with old Wine versions (< 9.x). The setup script uses Wine 11.4 Staging which fixes this. If it still hangs, kill and retry -- the Agent sometimes needs a second attempt.
 
 **Battle.net opens but shows a white/blank window**
 
@@ -101,10 +112,11 @@ This launcher is configured for NVIDIA PRIME offload. For AMD GPUs, edit `config
 ## File structure
 
 ```
-config.sh      # All paths, versions, and environment variables
-setup.sh       # One-time setup (downloads Wine, DXVK, creates prefix)
-launch.sh      # Launcher for Battle.net and WoW
-diagnose.sh    # Diagnostic tool for troubleshooting
+config.sh              # All paths, versions, and environment variables
+setup.sh               # One-time setup (downloads Wine, DXVK, creates prefix)
+launch.sh              # Launcher for Battle.net and WoW
+diagnose.sh            # Diagnostic tool for troubleshooting
+install-desktop.sh     # Installs .desktop entries and icons for app menu
 ```
 
 Everything installs to `~/wow-launcher/`. No system-wide changes except the packages installed by setup.
