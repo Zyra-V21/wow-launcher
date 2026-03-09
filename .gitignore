@@ -1,0 +1,12 @@
+# Wine prefix (user-specific, huge)
+prefix/
+
+# Downloaded binaries
+downloads/
+wine-staging/
+wine-ge/
+dxvk/
+
+# Runtime files
+logs/
+*.exe
