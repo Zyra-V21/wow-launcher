@@ -49,6 +49,20 @@ Keywords=wow;warcraft;classic;mmorpg;
 StartupWMClass=wowclassic.exe
 EOF
 
+# WoW Forever
+cat > "$APP_DIR/wow-forever.desktop" << EOF
+[Desktop Entry]
+Name=WoW Forever
+Comment=World of Warcraft Forever (Wine)
+Exec=$SCRIPT_DIR/launch.sh --wow-forever
+Icon=$ICON_DIR/wow-classic.png
+Terminal=false
+Type=Application
+Categories=Game;
+Keywords=wow;warcraft;forever;mmorpg;
+StartupWMClass=wow.exe
+EOF
+
 # WoW Retail
 cat > "$APP_DIR/wow-retail.desktop" << EOF
 [Desktop Entry]
@@ -63,11 +77,12 @@ Keywords=wow;warcraft;retail;mmorpg;
 StartupWMClass=wow.exe
 EOF
 
-chmod +x "$APP_DIR/battlenet.desktop" "$APP_DIR/wow-classic.desktop" "$APP_DIR/wow-retail.desktop"
+chmod +x "$APP_DIR/battlenet.desktop" "$APP_DIR/wow-classic.desktop" "$APP_DIR/wow-forever.desktop" "$APP_DIR/wow-retail.desktop"
 update-desktop-database "$APP_DIR" 2>/dev/null || true
 
 log "Accesos directos instalados:"
 log "  - Battle.net"
 log "  - WoW Classic"
+log "  - WoW Forever"
 log "  - WoW Retail"
 log "Ya puedes buscarlos en el menu de aplicaciones."

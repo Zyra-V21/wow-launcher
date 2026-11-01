@@ -55,18 +55,13 @@ fi
 
 echo ""
 
-# 2. Wine-GE
-echo -e "${CYAN}[Wine-GE]${NC}"
+# 2. Wine
+echo -e "${CYAN}[Wine]${NC}"
 if [ -x "$WINE" ]; then
     WINE_VER=$("$WINE" --version 2>/dev/null)
-    ok "Wine-GE: $WINE_VER"
+    ok "Wine: $WINE_VER"
 else
-    fail "Wine-GE no encontrado en: $WINE"
-    # Try to find it
-    FOUND=$(find "$WINE_GE_DIR" -name "wine" -type f -executable 2>/dev/null | head -1)
-    if [ -n "$FOUND" ]; then
-        warn "Encontrado en: $FOUND (actualiza config.sh)"
-    fi
+    fail "Wine not found at: $WINE (run ./setup.sh)"
 fi
 
 echo ""
@@ -83,16 +78,25 @@ else
     fail "Prefix no existe - ejecuta ./setup.sh"
 fi
 
-# Check DXVK
-if [ -f "$WINEPREFIX/drive_c/windows/system32/d3d11.dll" ]; then
-    # Check if it's DXVK or builtin
-    if strings "$WINEPREFIX/drive_c/windows/system32/d3d11.dll" 2>/dev/null | grep -qi dxvk; then
-        ok "DXVK instalado en system32"
+# Direct3D translators: DXVK (DX11), vkd3d-proton (DX12, which WoW Forever needs), dxvk-nvapi
+SYS32="$WINEPREFIX/drive_c/windows/system32"
+check_dll() {
+    local dll="$1" mark="$2" what="$3"
+    if [ ! -f "$SYS32/$dll" ]; then
+        fail "$what not installed ($dll missing, run ./setup.sh)"
+    elif strings -n 4 "$SYS32/$dll" 2>/dev/null | grep -qi "$mark"; then
+        ok "$what: $dll"
     else
-        warn "d3d11.dll existe pero puede no ser DXVK"
+        warn "$dll is there but does not look like $what (Wine's own?)"
     fi
+}
+check_dll d3d11.dll dxvk "DXVK"
+check_dll d3d12.dll vkd3d "vkd3d-proton"
+check_dll nvapi64.dll "dxvk-nvapi" "dxvk-nvapi"
+if [ -f "$DXVK_CONFIG_FILE" ]; then
+    ok "dxvk.conf: $DXVK_CONFIG_FILE"
 else
-    fail "DXVK no instalado en el prefix"
+    warn "dxvk.conf missing: WoW may not see the NVIDIA GPU (run ./setup.sh)"
 fi
 
 echo ""
@@ -112,20 +116,25 @@ fi
 
 # Check for WoW
 echo ""
-echo -e "${CYAN}[WoW Classic]${NC}"
+echo -e "${CYAN}[WoW]${NC}"
 WOW_FOUND=false
-for dir in "$WINEPREFIX/drive_c/Program Files (x86)/World of Warcraft/_classic_" \
-           "$WINEPREFIX/drive_c/Program Files (x86)/World of Warcraft/_classic_era_"; do
-    if [ -d "$dir" ]; then
-        ok "Directorio WoW encontrado: $dir"
-        WOW_FOUND=true
-        for exe in WowClassic.exe Wow.exe WoW.exe; do
-            [ -f "$dir/$exe" ] && ok "Ejecutable: $exe"
-        done
-    fi
+for dir in "$WINEPREFIX/drive_c/Program Files (x86)/World of Warcraft"/_*_; do
+    [ -d "$dir" ] || continue
+    WOW_FOUND=true
+    for exe in Wow.exe WowClassic.exe WowB.exe WoW.exe; do
+        [ -f "$dir/$exe" ] && ok "$(basename "$dir"): $exe"
+    done
 done
 if ! $WOW_FOUND; then
-    warn "WoW Classic no instalado aun (instálalo desde Battle.net)"
+    warn "No WoW installed yet (install it from Battle.net)"
+fi
+FOREVER_DIR="$WINEPREFIX/drive_c/Program Files (x86)/World of Warcraft/_forever_"
+if [ -d "$FOREVER_DIR" ]; then
+    if grep -qi '^SET hwDetect "0"' "$FOREVER_DIR/WTF/Config.wtf" 2>/dev/null; then
+        ok "WoW Forever freeze fix applied (hardware autodetect off)"
+    else
+        warn "WoW Forever freeze fix not applied yet: close the game and run ./launch.sh --fix-forever"
+    fi
 fi
 
 echo ""

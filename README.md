@@ -1,13 +1,14 @@
 # wow-launcher
 
-Battle.net + World of Warcraft launcher for Linux. Runs both **WoW Classic** and **WoW Retail** using Wine 11.4 Staging + DXVK 2.7.1.
+Battle.net + World of Warcraft launcher for Linux. Runs **WoW Forever**, **WoW Classic** and **WoW Retail** using Wine 11.4 Staging, DXVK 3.1.1 and vkd3d-proton 3.0.1.
 
 Built because Lutris, Bottles, and other existing solutions kept failing to launch Battle.net properly.
 
 ## What it does
 
 - Downloads and configures **Wine 11.4 Staging** (standalone, doesn't touch your system Wine)
-- Installs **DXVK 2.7.1** for DirectX-to-Vulkan translation
+- Installs **DXVK 3.1.1** (DirectX 9-11), **vkd3d-proton 3.0.1** (DirectX 12, which WoW Forever needs) and **dxvk-nvapi 0.9.2** (so WoW sees your NVIDIA GPU)
+- Fixes the **WoW Forever freeze** on the photosensitivity warning (see below)
 - Creates an isolated Wine prefix with Windows 10 configuration
 - Installs required Windows dependencies (vcrun2019, corefonts)
 - Applies Battle.net-specific fixes (CEF rendering, digital signature bypass, IPv6 disable)
@@ -18,10 +19,10 @@ Built because Lutris, Bottles, and other existing solutions kept failing to laun
 ## Requirements
 
 - Ubuntu 22.04+ (or any distro with recent glibc)
-- NVIDIA GPU with proprietary drivers (tested on RTX 5060 Laptop, driver 590)
+- NVIDIA GPU with proprietary drivers (tested on RTX 5060 Laptop, driver 595)
 - Vulkan support (`libvulkan1`, `mesa-vulkan-drivers`)
 - 32-bit NVIDIA libraries (`libnvidia-gl-XXX:i386`)
-- `winetricks`, `cabextract`, `p7zip-full`
+- `winetricks`, `cabextract`, `p7zip-full`, `zstd`
 
 The setup script will check and install missing packages automatically.
 
@@ -43,7 +44,7 @@ After that, always launch with:
 
 ## Desktop integration
 
-To add Battle.net, WoW Classic, and WoW Retail to your Linux app menu:
+To add Battle.net, WoW Forever, WoW Classic and WoW Retail to your Linux app menu:
 
 ```bash
 ./install-desktop.sh
@@ -55,8 +56,11 @@ This creates `.desktop` entries with icons so you can search and launch them lik
 
 ```
 ./launch.sh                 # Launch Battle.net (default)
+./launch.sh --wow-forever   # Launch WoW Forever directly
 ./launch.sh --wow-classic   # Launch WoW Classic directly
 ./launch.sh --wow-retail    # Launch WoW Retail directly
+./launch.sh --fix-forever   # Apply the WoW Forever freeze fix now
+./launch.sh --flush-cache   # Move WoW and shader caches aside (settings untouched)
 ./launch.sh --kill          # Kill all Wine processes
 ./launch.sh --winecfg       # Open Wine configuration
 ./launch.sh --prefix        # Open the Wine prefix in file manager
@@ -75,6 +79,22 @@ Run the diagnostic tool:
 It checks GPU drivers, Vulkan, Wine, DXVK, Battle.net installation, esync limits, and more.
 
 ### Common issues
+
+**WoW Forever freezes on the photosensitivity warning ("not responding")**
+
+On a fresh install the game autodetects your hardware and picks graphics settings that hang its DirectX 12 renderer under Wine. The warning never fades, keys do nothing, and the desktop says the game is not responding. Changing the API to DX11 does not help: the client ignores it and keeps DX12.
+
+`launch.sh` fixes it for you: every time it starts Battle.net it turns the hardware autodetect off (`hwDetect 0`) and sets a low graphics preset (quality 3) in `_forever_/WTF/Config.wtf`. It does this only once per install, so quality you raise later in game stays. If you install Forever while Battle.net is open, it applies the fix as soon as the `_forever_` folder appears.
+
+If the game already froze: force quit it, run `./launch.sh --fix-forever`, and start it again. Once you are in, raise the quality in game, but keep **Secondary Lighting** low: the same renderer hang has been reported at higher settings when entering the world.
+
+Without this launcher (Lutris, Steam/Proton...), add these lines to `World of Warcraft/_forever_/WTF/Config.wtf` with the game closed:
+
+```
+SET hwDetect "0"
+SET graphicsQuality "3"
+SET RAIDgraphicsQuality "3"
+```
 
 **Battle.net installer hangs at "Updating Battle.net Update Agent"**
 
@@ -113,7 +133,7 @@ This launcher is configured for NVIDIA PRIME offload. For AMD GPUs, edit `config
 
 ```
 config.sh              # All paths, versions, and environment variables
-setup.sh               # One-time setup (downloads Wine, DXVK, creates prefix)
+setup.sh               # One-time setup (downloads Wine, DXVK, vkd3d-proton, dxvk-nvapi, creates prefix)
 launch.sh              # Launcher for Battle.net and WoW
 diagnose.sh            # Diagnostic tool for troubleshooting
 install-desktop.sh     # Installs .desktop entries and icons for app menu
